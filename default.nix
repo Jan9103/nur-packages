@@ -14,6 +14,7 @@
   modules = import ./modules; # NixOS modules
   overlays = import ./overlays; # nixpkgs overlays
 
+  a2ln = pkgs.callPackage ./pkgs/a2ln { };
   inochi-session = pkgs.callPackage ./pkgs/inochi-session { };
   mocword = pkgs.callPackage ./pkgs/mocword { };
   mocword-with-data = pkgs.callPackage ./pkgs/mocword/with_data.nix { };
