@@ -21,13 +21,18 @@ rustPlatform.buildRustPackage rec {
     owner = pname;
     repo = pname;
     rev = version;
-    sha256 = "sha256-u8/SvuR/RpJaBX4Dr3Onrk0AVpIAeVb+399+NUpgkfI=";
+    sha256 = "sha256-dGsnbKsg0nQFFXZDRDei2uGhGWEQSeSHGpXJp+8QUC8=";
   };
 
-  cargoSha256 = "sha256-yVVgEq5yfjycQRndkT8vPnpNa+1lHwFB6ZPbLpHbS/0=";
+  cargoSha256 = "sha256-GsnfLijPhnEbFHRmyqEfrFVWkFQghC7ExLD8dQidyh4=";
 
-  # enable pkg-config feature of zstd
-  cargoPatches = [ ./zstd-pkg-config.patch ];
+  
+  cargoPatches = [
+    #./zstd-pkg-config.patch
+    # - update dependencies
+    # - enable pkg-config feature of zstd ( ./zstd-pkg-config.patch )
+    ./cargo-dependencies.patch
+  ];
 
   nativeBuildInputs = [ pkg-config ]
     ++ lib.optionals (withExtraFeatures && stdenv.isLinux) [ python3 ];

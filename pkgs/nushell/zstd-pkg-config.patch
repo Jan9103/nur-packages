@@ -1,30 +1,31 @@
 diff --git a/Cargo.lock b/Cargo.lock
-index 7376ffe6a..a7d3335cc 100644
+index 38f347286..531d3d042 100644
 --- a/Cargo.lock
 +++ b/Cargo.lock
-@@ -2751,6 +2751,7 @@ dependencies = [
-  "which",
-  "windows",
-  "winreg",
+@@ -4288,6 +4288,7 @@ dependencies = [
+  "wasm-bindgen-futures",
+  "web-sys",
+  "winreg 0.10.1",
 + "zstd",
  ]
  
  [[package]]
-@@ -5881,4 +5882,5 @@ checksum = "9fd07cbbc53846d9145dbffdf6dd09a7a0aa52be46741825f5c97bdd4f73f12b"
+@@ -6058,4 +6059,5 @@ checksum = "9fd07cbbc53846d9145dbffdf6dd09a7a0aa52be46741825f5c97bdd4f73f12b"
  dependencies = [
   "cc",
   "libc",
 + "pkg-config",
  ]
-diff --git a/crates/nu-command/Cargo.toml b/crates/nu-command/Cargo.toml
-index d293f3e39..a462d67dc 100644
---- a/crates/nu-command/Cargo.toml
-+++ b/crates/nu-command/Cargo.toml
-@@ -93,6 +93,8 @@ wax = { version =  "0.5.0", features = ["diagnostics"] }
- rusqlite = { version = "0.28.0", features = ["bundled"], optional = true }
- sqlparser = { version = "0.23.0", features = ["serde"], optional = true }
+diff --git a/Cargo.toml b/Cargo.toml
+index 799dfb6bb..f9861e85f 100644
+--- a/Cargo.toml
++++ b/Cargo.toml
+@@ -68,6 +68,8 @@ is_executable = "1.0.1"
+ simplelog = "0.12.0"
+ time = "0.3.12"
  
 +zstd = { version = "*", features = [ "pkg-config" ] }
 +
- [target.'cfg(windows)'.dependencies]
- winreg = "0.10.1"
+ [target.'cfg(not(target_os = "windows"))'.dependencies]
+ # Our dependencies don't use OpenSSL on Windows
+ openssl = { version = "0.10.38", features = ["vendored"], optional = true }
