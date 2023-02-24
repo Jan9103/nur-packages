@@ -18,4 +18,5 @@
   # some-qt5-package = pkgs.libsForQt5.callPackage ./pkgs/some-qt5-package { };
   # ...
   inochi-session = pkgs.callPackage ./pkgs/inochi-session { };
+  nushell = pkgs.callPackage ./pkgs/nushell { };
 }
