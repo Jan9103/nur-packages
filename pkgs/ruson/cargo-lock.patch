@@ -1,0 +1,11 @@
+diff --git a/Cargo.lock b/Cargo.lock
+new file mode 100644
+index 0000000..731316a
+--- /dev/null
++++ b/Cargo.lock
+@@ -0,0 +1,5 @@
++version = 3
++
++[[package]]
++name = "ruson"
++version = "0.2.2"

@@ -17,5 +17,6 @@
   inochi-session = pkgs.callPackage ./pkgs/inochi-session { };
   mocword = pkgs.callPackage ./pkgs/mocword { };
   nushell = pkgs.callPackage ./pkgs/nushell { };
+  ruson = pkgs.callPackage ./pkgs/ruson { };
   streampager = pkgs.callPackage ./pkgs/streampager { };
 }
