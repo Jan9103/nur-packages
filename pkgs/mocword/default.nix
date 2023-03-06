@@ -2,8 +2,6 @@
 , fetchFromGitHub
 , rustPlatform
 , nix-update-script
-, openssl
-, pkg-config
 }:
 
 rustPlatform.buildRustPackage rec {
@@ -23,9 +21,9 @@ rustPlatform.buildRustPackage rec {
     ./cargo-lock.patch  # adds a cargo.lock
   ];
 
-  nativeBuildInputs = [ pkg-config ];
+  nativeBuildInputs = [ ];
 
-  buildInputs = [ openssl ];
+  buildInputs = [ ];
 
   doCheck = false;  # it has no tests
 
