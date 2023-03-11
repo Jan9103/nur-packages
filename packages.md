@@ -1,9 +1,11 @@
 # Packages in this repository
 
-Name             | short description                | note
----------------- | -------------------------------- | ------------------
-`inochi-session` | VTube avatar renderer            |
-`mocword`        | english sentence/word completion | the `-with-data` variant has the english dataset built in
-`nushell`        | A data-driven shell              | Forked from nixpks
-`ruson`          | a cli json parser                |
-`streampager`    | a cli pager (similar to less)    |
+Name               | short description                | version | note
+------------------ | -------------------------------- | ------- | ------------------
+`inochi-session`   | VTube avatar renderer            | 0.5.4   | uses the app-image
+`mocword`          | english sentence/word completion | 0.2.0   |
+`mocword-with-data`| + english dataset builtin        | 0.2.0   |
+`nushell`          | A data-driven shell              | 0.76.0  | Forked from nixpks
+`nushell-preview`  | + unreleased version             | MR 0.77.0 |
+`ruson`            | a cli json parser                | 0.2.2   |
+`streampager`      | a cli pager (similar to less)    | 0.10.2  |
