@@ -1,21 +1,20 @@
 { lib
 , pkgs
 , fetchFromGitHub
-, python3
+, python311
 , wrapGAppsNoGuiHook
 }:
 
-python3.pkgs.buildPythonApplication rec {
+python311.pkgs.buildPythonApplication rec {
   pname = "a2ln";
-  version = "1.1.8";
+  version = "1.1.10";
   format = "pyproject";
 
   src = fetchFromGitHub {
     owner = "patri9ck";
     repo = "a2ln-server";
     rev = version;
-    #hash = lib.fakeHash;
-    hash = "sha256-nyzxPy+4z+GAuYFkX+3a/Qw16bUhrPigkSYajvZPeuo=";
+    hash = "sha256-tMTCc9ngSCbDwjzTVCQ9Km8onp/t1hvn3pj5PO+1/Hc=";
   };
 
   doCheck = false;  # no tests available
@@ -23,7 +22,6 @@ python3.pkgs.buildPythonApplication rec {
   buildInputs = with pkgs; [
     libnotify
     gtk3
-    #gst_all_1.gstreamer
   ];
 
   nativeBuildInputs = [
@@ -31,7 +29,7 @@ python3.pkgs.buildPythonApplication rec {
     wrapGAppsNoGuiHook
   ];
 
-  propagatedBuildInputs = with python3.pkgs; [
+  propagatedBuildInputs = with python311.pkgs; [
     setuptools
 
     pillow
