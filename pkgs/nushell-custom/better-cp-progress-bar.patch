@@ -1,0 +1,313 @@
+# https://github.com/nushell/nushell/pull/8325
+diff --git a/crates/nu-command/src/filesystem/cp.rs b/crates/nu-command/src/filesystem/cp.rs
+index 7779527c5..82f9e44c2 100644
+--- a/crates/nu-command/src/filesystem/cp.rs
++++ b/crates/nu-command/src/filesystem/cp.rs
+@@ -1,5 +1,5 @@
+ use std::fs::read_link;
+-use std::io::{BufReader, BufWriter, ErrorKind, Read, Write};
++use std::io::{stdout, BufReader, BufWriter, ErrorKind, Read, Write};
+ use std::path::PathBuf;
+ use std::sync::atomic::AtomicBool;
+ use std::sync::Arc;
+@@ -18,6 +18,7 @@ use super::util::try_interaction;
+ 
+ use crate::filesystem::util::FileStructure;
+ use crate::progress_bar;
++use crossterm::{cursor, ExecutableCommand};
+ 
+ const GLOB_PARAMS: nu_glob::MatchOptions = nu_glob::MatchOptions {
+     case_sensitive: true,
+@@ -274,7 +275,22 @@ impl Command for Cp {
+                     Ok((PathBuf::from(&source_file), dest))
+                 })?;
+ 
++                let mut overall_pb = progress_bar::NuProgressBar::new(
++                    progress_bar::ProgressType::ProgressItems,
++                    Some(sources.len() as u64),
++                    "".to_string(),
++                );
++
++                let mut n_file = 0;
++
++                // these variables help us update the overall progress bar.
++                let mut stdout = stdout();
++                let mut is_pb = false;
++
+                 for (s, d) in sources {
++                    n_file += 1;
++                    overall_pb.update_bar(n_file);
++
+                     // Check if the user has pressed ctrl+c before copying a file
+                     if nu_utils::ctrl_c::was_pressed(&ctrlc) {
+                         return Ok(PipelineData::empty());
+@@ -301,6 +317,7 @@ impl Command for Cp {
+                     } else if s.is_file() {
+                         let res = if interactive && d.exists() {
+                             if progress {
++                                is_pb = true;
+                                 interactive_copy(
+                                     interactive,
+                                     s,
+@@ -313,13 +330,23 @@ impl Command for Cp {
+                                 interactive_copy(interactive, s, d, span, &None, copy_file)
+                             }
+                         } else if progress {
++                            is_pb = true;
+                             copy_file_with_progressbar(s, d, span, &ctrlc)
+                         } else {
+                             copy_file(s, d, span, &None)
+                         };
+                         result.push(res);
+                     };
++
++                    // If the previous copy was executed with progress bar on then
++                    // move the terminal cursor up so we can update the overall progress bar.
++                    if is_pb {
++                        let _tmp_pos = stdout.execute(cursor::MoveToPreviousLine(0));
++                        is_pb = false;
++                    }
+                 }
++
++                overall_pb.finished_msg("".to_string(), false);
+             }
+         }
+ 
+@@ -425,6 +452,10 @@ fn copy_file_with_progressbar(
+ ) -> Value {
+     let mut bytes_processed: u64 = 0;
+     let mut process_failed: Option<std::io::Error> = None;
++    let file_name = &src
++        .file_name()
++        .unwrap_or_else(|| std::ffi::OsStr::new(""))
++        .to_string_lossy();
+ 
+     let file_in = match std::fs::File::open(&src) {
+         Ok(file) => file,
+@@ -436,7 +467,11 @@ fn copy_file_with_progressbar(
+         _ => None,
+     };
+ 
+-    let mut bar = progress_bar::NuProgressBar::new(file_size);
++    let mut bar = progress_bar::NuProgressBar::new(
++        progress_bar::ProgressType::ProgressBytes,
++        file_size,
++        file_name.to_string(),
++    );
+ 
+     let file_out = match std::fs::File::create(&dst) {
+         Ok(file) => file,
+@@ -496,13 +531,8 @@ fn copy_file_with_progressbar(
+         return convert_io_error(error, src, dst, span);
+     }
+ 
+-    // Get the name of the file to print it out at the end
+-    let file_name = &src
+-        .file_name()
+-        .unwrap_or_else(|| std::ffi::OsStr::new(""))
+-        .to_string_lossy();
+     let msg = format!("copied {:} to {:}", src.display(), dst.display());
+-    bar.finished_msg(format!(" {} copied!", &file_name));
++    bar.finished_msg(format!(" {} copied!", &file_name), true);
+ 
+     Value::String { val: msg, span }
+ }
+diff --git a/crates/nu-command/src/filesystem/save.rs b/crates/nu-command/src/filesystem/save.rs
+index e7026d26d..0609060ad 100644
+--- a/crates/nu-command/src/filesystem/save.rs
++++ b/crates/nu-command/src/filesystem/save.rs
+@@ -361,7 +361,11 @@ fn stream_to_file(
+     // It looks a bit messy but I am doing it this way to avoid
+     // creating the bar when is not needed
+     let (mut bar_opt, bar_opt_clone) = if progress {
+-        let tmp_bar = progress_bar::NuProgressBar::new(file_total_size);
++        let tmp_bar = progress_bar::NuProgressBar::new(
++            progress_bar::ProgressType::ProgressBytes,
++            file_total_size,
++            "".to_string(),
++        );
+         let tmp_bar_clone = tmp_bar.clone();
+ 
+         (Some(tmp_bar), Some(tmp_bar_clone))
+diff --git a/crates/nu-command/src/progress_bar.rs b/crates/nu-command/src/progress_bar.rs
+index b97502f05..1f6d77b11 100644
+--- a/crates/nu-command/src/progress_bar.rs
++++ b/crates/nu-command/src/progress_bar.rs
+@@ -1,67 +1,110 @@
+-use indicatif::{ProgressBar, ProgressState, ProgressStyle};
+-use std::fmt;
+-
+-// This module includes the progress bar used to show the progress when using the command `save`
+-// Eventually it would be nice to find a better place for it.
+-
+-pub struct NuProgressBar {
+-    pub pb: ProgressBar,
+-    bytes_processed: u64,
+-    total_bytes: Option<u64>,
+-}
+-
+-impl NuProgressBar {
+-    pub fn new(total_bytes: Option<u64>) -> NuProgressBar {
+-        // Let's create the progress bar template.
+-        let template = match total_bytes {
+-            Some(_) => {
+-                // We will use a progress bar if we know the total bytes of the stream
+-                ProgressStyle::with_template("{spinner:.green} [{elapsed_precise}] [{bar:30.cyan/blue}] [{bytes}/{total_bytes}] {binary_bytes_per_sec} ({eta}) {wide_msg}")
+-            }
+-            _ => {
+-                // But if we don't know the total then we just show the stats progress
+-                ProgressStyle::with_template(
+-                    "{spinner:.green} [{elapsed_precise}] {bytes} {binary_bytes_per_sec} {wide_msg}",
+-                )
+-            }
+-        };
+-
+-        let total_bytes = total_bytes.unwrap_or_default();
+-
+-        let new_progress_bar = ProgressBar::new(total_bytes);
+-        new_progress_bar.set_style(
+-            template
+-                .unwrap_or_else(|_| ProgressStyle::default_bar())
+-                .with_key("eta", |state: &ProgressState, w: &mut dyn fmt::Write| {
+-                    let _ = fmt::write(w, format_args!("{:.1}s", state.eta().as_secs_f64()));
+-                })
+-                .progress_chars("#>-"),
+-        );
+-
+-        NuProgressBar {
+-            pb: new_progress_bar,
+-            total_bytes: None,
+-            bytes_processed: 0,
+-        }
+-    }
+-
+-    pub fn update_bar(&mut self, bytes_processed: u64) {
+-        self.pb.set_position(bytes_processed);
+-    }
+-
+-    pub fn finished_msg(&self, msg: String) {
+-        self.pb.finish_with_message(msg);
+-    }
+-
+-    pub fn abandoned_msg(&self, msg: String) {
+-        self.pb.abandon_with_message(msg);
+-    }
+-
+-    pub fn clone(&self) -> NuProgressBar {
+-        NuProgressBar {
+-            pb: self.pb.clone(),
+-            bytes_processed: self.bytes_processed,
+-            total_bytes: self.total_bytes,
+-        }
+-    }
+-}
++use indicatif::{ProgressBar, ProgressState, ProgressStyle};
++use std::fmt;
++
++// This module includes the progress bar used to show the progress when using the command `save`
++// Eventually it would be nice to find a better place for it.
++
++pub struct NuProgressBar {
++    pub pb: ProgressBar,
++    bytes_processed: u64,
++    total_bytes: Option<u64>,
++}
++
++#[derive(PartialEq)]
++pub enum ProgressType {
++    ProgressBytes,
++    ProgressItems,
++}
++
++impl NuProgressBar {
++    pub fn new(
++        progress_type: ProgressType,
++        total_progress: Option<u64>,
++        msg: String,
++    ) -> NuProgressBar {
++        let (progress_flag_current, progress_flag_goal) = match progress_type {
++            ProgressType::ProgressBytes => ("{bytes}", "{total_bytes}"),
++            ProgressType::ProgressItems => ("{pos}", "{len}"),
++        };
++
++        let progress_flag_eta = if progress_type == ProgressType::ProgressBytes {
++            "({eta})"
++        } else {
++            ""
++        };
++        let progress_flag_bytes_per_sec = if progress_type == ProgressType::ProgressBytes {
++            "{binary_bytes_per_sec}"
++        } else {
++            ""
++        };
++
++        // Let's create the progress bar template.
++        let template = match total_progress {
++            Some(_) => {
++                let str_template = format!(
++                    "{{spinner:.green}} [{{elapsed_precise}}] [{{bar:30.cyan/blue}}] [{}/{}] {} {} {{wide_msg}}",
++                    progress_flag_current,
++                    progress_flag_goal,
++                    progress_flag_bytes_per_sec,
++                    progress_flag_eta
++                );
++
++                // We will use a progress bar if we know the total bytes of the stream
++                ProgressStyle::with_template(&str_template)
++            }
++            _ => {
++                let str_template = format!(
++                    "{{spinner:.green}} [{{elapsed_precise}}] {} {} {{wide_msg}}",
++                    progress_flag_current, progress_flag_bytes_per_sec
++                );
++
++                // But if we don't know the total then we just show the stats progress
++                ProgressStyle::with_template(&str_template)
++            }
++        };
++
++        let total_progress = total_progress.unwrap_or_default();
++
++        let new_progress_bar = ProgressBar::new(total_progress);
++        new_progress_bar.set_style(
++            template
++                .unwrap_or_else(|_| ProgressStyle::default_bar())
++                .with_key("eta", |state: &ProgressState, w: &mut dyn fmt::Write| {
++                    let _ = fmt::write(w, format_args!("{:.1}s", state.eta().as_secs_f64()));
++                })
++                .progress_chars("#>-"),
++        );
++
++        new_progress_bar.set_message(msg);
++
++        NuProgressBar {
++            pb: new_progress_bar,
++            total_bytes: None,
++            bytes_processed: 0,
++        }
++    }
++
++    pub fn update_bar(&mut self, bytes_processed: u64) {
++        self.pb.set_position(bytes_processed);
++    }
++
++    pub fn finished_msg(&self, msg: String, clear: bool) {
++        if clear {
++            self.pb.finish_and_clear();
++        } else {
++            self.pb.finish_with_message(msg);
++        }
++    }
++
++    pub fn abandoned_msg(&self, msg: String) {
++        self.pb.abandon_with_message(msg);
++    }
++
++    pub fn clone(&self) -> NuProgressBar {
++        NuProgressBar {
++            pb: self.pb.clone(),
++            bytes_processed: self.bytes_processed,
++            total_bytes: self.total_bytes,
++        }
++    }
++}

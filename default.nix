@@ -18,6 +18,7 @@
   mocword = pkgs.callPackage ./pkgs/mocword { };
   mocword-with-data = pkgs.callPackage ./pkgs/mocword/with_data.nix { };
   nushell = pkgs.callPackage ./pkgs/nushell { };
+  nushell-custom = pkgs.callPackage ./pkgs/nushell-custom { };
   nushell-preview = pkgs.callPackage ./pkgs/nushell-preview { };
   ruson = pkgs.callPackage ./pkgs/ruson { };
   streampager = pkgs.callPackage ./pkgs/streampager { };
