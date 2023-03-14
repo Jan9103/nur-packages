@@ -1,5 +1,4 @@
-{ stdenv
-, lib
+{ lib
 , fetchFromGitHub
 , rustPlatform
 , openssl
@@ -7,40 +6,29 @@
 , pkg-config
 , python3
 , xorg
-, withExtraFeatures ? true
 , testers
 , nushell
 , nix-update-script
 }:
 
-rustPlatform.buildRustPackage rec {
+rustPlatform.buildRustPackage {
   pname = "nushell";
-  version = "0.76.0";
+  version = "0.77.0";
 
   src = fetchFromGitHub {
-    owner = pname;
-    repo = pname;
-    rev = version;
-    sha256 = "sha256-dGsnbKsg0nQFFXZDRDei2uGhGWEQSeSHGpXJp+8QUC8=";
+    owner = "nushell";
+    repo = "nushell";
+    rev = "fd09609b44b53d41ac7929e90708cdeba7bfb571";
+    sha256 = "sha256-cffAxuM12wdd7IeLbKSpL6dpvpZVscA8nMOh3jFqY3E=";
   };
 
-  cargoSha256 = "sha256-GsnfLijPhnEbFHRmyqEfrFVWkFQghC7ExLD8dQidyh4=";
+  cargoSha256 = "sha256-OcYE9d3hO3JtxF3REWev0Rz97Kr9l7P7nUxhIb5fhi0=";
 
-  
-  cargoPatches = [
-    #./zstd-pkg-config.patch
-    # - update dependencies
-    # - enable pkg-config feature of zstd ( ./zstd-pkg-config.patch )
-    ./cargo-dependencies.patch
-  ];
+  nativeBuildInputs = [ pkg-config python3 ];
 
-  nativeBuildInputs = [ pkg-config ]
-    ++ lib.optionals (withExtraFeatures && stdenv.isLinux) [ python3 ];
+  buildInputs = [ openssl zstd xorg.libX11 ];
 
-  buildInputs = [ openssl zstd ]
-    ++ lib.optionals (withExtraFeatures && stdenv.isLinux) [ xorg.libX11 ];
-
-  buildFeatures = lib.optional withExtraFeatures "extra";
+  buildFeatures = [ "default" ];
 
   doCheck = true;
 
