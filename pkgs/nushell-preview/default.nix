@@ -1,5 +1,4 @@
-{ stdenv
-, lib
+{ lib
 , fetchFromGitHub
 , rustPlatform
 , openssl
@@ -15,18 +14,15 @@
 rustPlatform.buildRustPackage {
   pname = "nushell-preview";
   version = "0.77.0-preview";
-  # https://github.com/nushell/nushell/pull/8410
 
   src = fetchFromGitHub {
-    owner = "sholderbach";
+    owner = "nushell";
     repo = "nushell";
-    rev = "c000ea9db76e5b2ae0c8874dac37be1ffb29064e";
-    sha256 = "sha256-Z4kiDk7OiSdQWnhdT+Kgb7lwQp1t/ne3wTANQH7TWOw=";
+    rev = "fd09609b44b53d41ac7929e90708cdeba7bfb571";
+    sha256 = "sha256-cffAxuM12wdd7IeLbKSpL6dpvpZVscA8nMOh3jFqY3E=";
   };
 
-  cargoSha256 = "sha256-8f0RJDxNRRipamvLp/ZKxVlUnNd9c9dHwCjtJNoe2OI=";
-
-  cargoPatches = [];
+  cargoSha256 = "sha256-ACYfNZ7kiLLqhpCE39OM06hmQbJlSEafxHWdNPFCNUg=";
 
   nativeBuildInputs = [ pkg-config python3 ];
 
