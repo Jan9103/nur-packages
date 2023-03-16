@@ -18,8 +18,8 @@ rustPlatform.buildRustPackage {
   src = fetchFromGitHub {
     owner = "nushell";
     repo = "nushell";
-    rev = "e672689a762b0c640acb6922fa7cf8158f908025";
-    sha256 = "sha256-KpHJ5QXgIogiuElij6M5h85kMBS8ucmxB+8dVALjbRI=";
+    rev = "d74a260883cae9f31562c12a59cab160b9c36ed4";
+    sha256 = "sha256-IhKsTsI5k3o+7moRAjNWIk6vDZEYIQx4RWzf3dxPN+w=";
   };
 
   cargoSha256 = "sha256-uSwY/aG5vw2xeDnVIQxPIsq5qCa0R01QLiZ/GH6D3wM=";
@@ -28,9 +28,9 @@ rustPlatform.buildRustPackage {
     ./better-cp-progress-bar.patch
     ./better-else-if-error-message.patch
     ./enable-error-reporting-from-vt.patch
-    ./exitcode-0-for-help.patch
+    ./fix-empty-dict-explore-error.patch
     ./fix-ls-symlink.patch
-    ./revert-eager-eval-in-subexp.patch
+    ./readd-get-i-flag.patch
   ];
 
   nativeBuildInputs = [ pkg-config python3 ];

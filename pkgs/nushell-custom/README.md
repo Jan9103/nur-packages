@@ -9,12 +9,12 @@ might contain more bugs. Use at your own risk.
 ## Special things about the `custom` version:
 
 - based on the main branch
-- fix `return` and `fzf` regression ([MR](https://github.com/nushell/nushell/pull/8475))
 - fix `ls` error when a symlink has no target ([MR](https://github.com/nushell/nushell/pull/8276)) 
 - better error for `else if` ([MR](https://github.com/nushell/nushell/pull/8274))
 - a improved `cp` progress bar ([MR](https://github.com/nushell/nushell/pull/8325))
 - enable error reporting from vt ([MR](https://github.com/nushell/nushell/pull/8373))
-- `nu --help` exitcode 1 -> 0 ([MR](https://github.com/nushell/nushell/pull/8478))
+- readd `get -i` ([MR](https://github.com/nushell/nushell/pull/8488))
+- fix `{} | explore` (no MR)
 
 
 ## Goals:

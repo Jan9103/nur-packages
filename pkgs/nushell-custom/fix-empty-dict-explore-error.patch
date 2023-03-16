@@ -1,0 +1,22 @@
+# https://github.com/nushell/nushell/issues/8479#issuecomment-1472203280
+diff --git a/crates/nu-explore/src/nu_common/mod.rs b/crates/nu-explore/src/nu_common/mod.rs
+index 7fdbb6d26..a3c0fd473 100644
+--- a/crates/nu-explore/src/nu_common/mod.rs
++++ b/crates/nu-explore/src/nu_common/mod.rs
+@@ -22,11 +22,10 @@ pub use table::try_build_table;
+ pub use value::{collect_input, collect_pipeline, create_map, map_into_value, nu_str};
+ 
+ pub fn has_simple_value(data: &[Vec<Value>]) -> Option<&Value> {
+-    let has_single_value = data.len() == 1 && data[0].len() == 1;
+-    let is_complex_type = matches!(&data[0][0], Value::List { .. } | Value::Record { .. });
+-    if has_single_value && !is_complex_type {
+-        Some(&data[0][0])
+-    } else {
+-        None
++    if data.len() == 1 && data[0].len() == 1 {
++        if !matches!(&data[0][0], Value::List { .. } | Value::Record { .. }) {
++            return Some(&data[0][0])
++        }
+     }
++    None
+ }
