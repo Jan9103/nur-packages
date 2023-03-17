@@ -11,18 +11,18 @@
 , nix-update-script
 }:
 
-rustPlatform.buildRustPackage {
+rustPlatform.buildRustPackage rec {
   pname = "nushell";
-  version = "0.77.0";
+  version = "0.77.1";
 
   src = fetchFromGitHub {
     owner = "nushell";
     repo = "nushell";
-    rev = "fd09609b44b53d41ac7929e90708cdeba7bfb571";
-    sha256 = "sha256-cffAxuM12wdd7IeLbKSpL6dpvpZVscA8nMOh3jFqY3E=";
+    rev = version;
+    sha256 = "sha256-MheKGfm72cxFtMIDj8VxEN4VFB1+tLoj+ujzL/7n8YI=";
   };
 
-  cargoSha256 = "sha256-OcYE9d3hO3JtxF3REWev0Rz97Kr9l7P7nUxhIb5fhi0=";
+  cargoSha256 = "sha256-oUeoCAeVP2MBAhJfMptK+Z3n050cqpIIgnUroRVBYjg=";
 
   nativeBuildInputs = [ pkg-config python3 ];
 
