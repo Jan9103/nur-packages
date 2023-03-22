@@ -13,21 +13,21 @@
 
 rustPlatform.buildRustPackage {
   pname = "nushell-custom";
-  version = "0.77.1-custom";
+  version = "0.77.2-custom";
 
   src = fetchFromGitHub {
     owner = "nushell";
     repo = "nushell";
-    rev = "bb8949f2b27666cf77a8b7b4412b162fed61c49e";
-    sha256 = "sha256-UeRZBB7PVjb+cdhV3zk8LyFVAJgAijombE7ad1ymrak=";
+    rev = "cb1eefd24ab632c5b43d4427b90ce04871f21a0a";
+    sha256 = "sha256-E2iNDwLy+Vxz4T0T43zAjoMBuYJd6wNH4wfWc2CD9C0=";
   };
 
-  cargoSha256 = "sha256-zkL5wcVITwcvK7PK854tglxUen0k3qNZIDThnMZSdeg=";
+  cargoSha256 = "sha256-cgn0SbvpRkn88z0oCOIoNRG2KJc3vmnvtZg3dMF2axY=";
 
   cargoPatches = [
     ./better-cp-progress-bar.patch
+    ./expand-tilde-in-backticks.patch
     ./fix-empty-dict-explore-error.patch
-    ./fix-ls-symlink.patch
   ];
 
   nativeBuildInputs = [ pkg-config python3 ];

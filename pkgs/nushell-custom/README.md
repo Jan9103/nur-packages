@@ -9,8 +9,8 @@ might contain more bugs. Use at your own risk.
 ## Special things about the `custom` version:
 
 - based on the main branch
-- fix `ls` error when a symlink has no target ([MR](https://github.com/nushell/nushell/pull/8276)) 
 - a improved `cp` progress bar ([MR](https://github.com/nushell/nushell/pull/8325))
+- expand `~` in backtick paths ([MR](https://github.com/nushell/nushell/pull/8561))
 - fix `{} | explore` (no MR)
 
 

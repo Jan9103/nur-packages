@@ -1,0 +1,37 @@
+# https://github.com/nushell/nushell/pull/8561
+diff --git a/crates/nu-command/src/system/run_external.rs b/crates/nu-command/src/system/run_external.rs
+index 646c0a66c..ebda1e344 100644
+--- a/crates/nu-command/src/system/run_external.rs
++++ b/crates/nu-command/src/system/run_external.rs
+@@ -778,7 +778,8 @@ fn trim_enclosing_quotes(input: &str) -> (String, bool, bool) {
+     match (chars.next(), chars.next_back()) {
+         (Some('"'), Some('"')) => (chars.collect(), false, true),
+         (Some('\''), Some('\'')) => (chars.collect(), false, true),
+-        (Some('`'), Some('`')) => (chars.collect(), true, true),
++        // We treat back-quoted strings as bare words, so there's no need to keep them as raw strings
++        (Some('`'), Some('`')) => (chars.collect(), true, false),
+         _ => (input.to_string(), true, false),
+     }
+ }
+diff --git a/crates/nu-command/tests/commands/run_external.rs b/crates/nu-command/tests/commands/run_external.rs
+index 151834c54..cd6833117 100644
+--- a/crates/nu-command/tests/commands/run_external.rs
++++ b/crates/nu-command/tests/commands/run_external.rs
+@@ -213,6 +213,17 @@ fn external_command_not_expand_tilde_with_quotes() {
+     )
+ }
+ 
++#[test]
++fn external_command_expand_tilde_with_back_quotes() {
++    Playground::setup(
++        "external command not expand tilde with quotes",
++        |dirs, _| {
++            let actual = nu!(cwd: dirs.test(), pipeline(r#"nu --testbin nonu `~`"#));
++            assert!(!actual.out.contains("~"));
++        },
++    )
++}
++
+ #[test]
+ fn external_command_receives_raw_binary_data() {
+     Playground::setup("external command receives raw binary data", |dirs, _| {
