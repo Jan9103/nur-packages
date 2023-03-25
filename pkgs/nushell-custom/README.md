@@ -1,5 +1,7 @@
 # nushell-custom
 
+**No longer actively maintained. i recommend switching to `nushell-preview`**
+
 This package was forked from this NUR's nushell package (which was forked from nixpkgs)
 
 Note: i build this version for myself. This version will most likely get no support and
