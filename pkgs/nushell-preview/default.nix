@@ -18,8 +18,8 @@ rustPlatform.buildRustPackage {
   src = fetchFromGitHub {
     owner = "nushell";
     repo = "nushell";
-    rev = "ad4450f9e8217adcc79809dc15b18430309eabc6";
-    sha256 = "sha256-GXMW+X0Wjk5mMJxzcw5mpffO/u6eZBlq9QTdKHS6nG0=";
+    rev = "393717dbb42943d1238188e07d80610f9a7b69c3";
+    sha256 = "sha256-vl8oUd1Mime7On7xzKewnSTxXhpg3YVyCa+FcyQr2Zo=";
   };
 
   cargoSha256 = "sha256-D6md6pDJSE5Zu7+potknKZSgv/pka3gPjsEmCP5NJi4=";
