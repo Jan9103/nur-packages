@@ -13,7 +13,7 @@
 
 rustPlatform.buildRustPackage {
   pname = "nushell-preview";
-  version = "0.77.2-preview";
+  version = "preview";
 
   src = fetchFromGitHub {
     owner = "nushell";
