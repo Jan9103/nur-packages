@@ -1,7 +1,9 @@
 #!/usr/bin/env nu
-const preset_file = "./pkgs/nushell-preview/preset.nix"
-const build_file = "./pkgs/nushell-preview/default.nix"
-const build_file_backup = "./pkgs/nushell-preview/default.nix.old"
+let pkg = ($env | get -i PKG | default "nushell-preview")
+
+let preset_file = $"./pkgs/($pkg)/preset.nix"
+let build_file = $"./pkgs/($pkg)/default.nix"
+let build_file_backup = $"./pkgs/($pkg)/default.nix.old"
 
 def generate_file [
 	src_rev: string
@@ -16,7 +18,7 @@ def generate_file [
 }
 
 def get_expected_hash [] {
-	do { nix-build -A nushell-preview } | complete | get stderr
+	do { nix-build -A $pkg } | complete | get stderr
 	| parse -r 'got: *(?P<sha>sha256-[a-zA-Z0-9+/]+=)' | get 0.sha
 }
 
@@ -37,7 +39,7 @@ try {
 
 	generate_file $commit $src_sha256 $cargo_sha256
 
-	let build_attempt = (do { nix-build -A nushell-preview } | complete)
+	let build_attempt = (do { nix-build -A $pkg } | complete)
 	if $build_attempt.exit_code != 0 {
 		print -e "build failed"
 		print -e ($build_attempt.stderr)

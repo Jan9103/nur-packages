@@ -20,6 +20,7 @@
   nushell = pkgs.callPackage ./pkgs/nushell { };
   nushell-custom = pkgs.callPackage ./pkgs/nushell-custom { };
   nushell-preview = pkgs.callPackage ./pkgs/nushell-preview { };
+  nushell-unstable = pkgs.callPackage ./pkgs/nushell-unstable { };
   ruson = pkgs.callPackage ./pkgs/ruson { };
   streampager = pkgs.callPackage ./pkgs/streampager { };
 }

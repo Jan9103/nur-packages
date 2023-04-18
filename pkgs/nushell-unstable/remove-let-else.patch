@@ -1,0 +1,157 @@
+diff --git a/crates/nu-cmd-lang/src/core_commands/help_aliases.rs b/crates/nu-cmd-lang/src/core_commands/help_aliases.rs
+index 455682a..2568634 100644
+--- a/crates/nu-cmd-lang/src/core_commands/help_aliases.rs
++++ b/crates/nu-cmd-lang/src/core_commands/help_aliases.rs
+@@ -111,13 +111,15 @@ pub fn help_aliases(
+             name.push_str(&r.item);
+         }
+ 
+-        let Some(alias) = engine_state.find_decl(name.as_bytes(), &[]) else {
+-            return Err(ShellError::AliasNotFound(span(
+-                &rest.iter().map(|r| r.span).collect::<Vec<Span>>(),
+-            )));
+-        };
+-
+-        let Some(alias) = engine_state.get_decl(alias).as_alias() else {
++        let alias = if let Some(id) = engine_state.find_decl(name.as_bytes(), &[]) {
++            if let Some(alias) = engine_state.get_decl(id).as_alias() {
++                alias
++            } else {
++                return Err(ShellError::AliasNotFound(span(
++                    &rest.iter().map(|r| r.span).collect::<Vec<Span>>(),
++                )));
++            }
++        } else {
+             return Err(ShellError::AliasNotFound(span(
+                 &rest.iter().map(|r| r.span).collect::<Vec<Span>>(),
+             )));
+diff --git a/crates/nu-cmd-lang/src/core_commands/help_modules.rs b/crates/nu-cmd-lang/src/core_commands/help_modules.rs
+index f87c870..5184092 100644
+--- a/crates/nu-cmd-lang/src/core_commands/help_modules.rs
++++ b/crates/nu-cmd-lang/src/core_commands/help_modules.rs
+@@ -117,7 +117,9 @@ pub fn help_modules(
+             name.push_str(&r.item);
+         }
+ 
+-        let Some(module_id) = engine_state.find_module(name.as_bytes(), &[]) else {
++        let module_id = if let Some(id) = engine_state.find_module(name.as_bytes(), &[]) {
++            id
++        } else {
+             return Err(ShellError::ModuleNotFoundAtRuntime {
+                 mod_name: name,
+                 span: span(&rest.iter().map(|r| r.span).collect::<Vec<Span>>()),
+diff --git a/crates/nu-cmd-lang/src/core_commands/use_.rs b/crates/nu-cmd-lang/src/core_commands/use_.rs
+index d6ea0c0..cbcef1b 100644
+--- a/crates/nu-cmd-lang/src/core_commands/use_.rs
++++ b/crates/nu-cmd-lang/src/core_commands/use_.rs
+@@ -45,10 +45,13 @@ impl Command for Use {
+         call: &Call,
+         input: PipelineData,
+     ) -> Result<PipelineData, ShellError> {
+-        let Some(Expression {
+-            expr: Expr::ImportPattern(import_pattern),
++        let import_pattern = if let Some(Expression {
++            expr: Expr::ImportPattern(pat),
+             ..
+-        }) = call.get_parser_info("import_pattern") else {
++        }) = call.get_parser_info("import_pattern")
++        {
++            pat
++        } else {
+             return Err(ShellError::GenericError(
+                 "Unexpected import".into(),
+                 "import pattern not supported".into(),
+diff --git a/crates/nu-engine/src/column.rs b/crates/nu-engine/src/column.rs
+index 6d4fa29..4f4336f 100644
+--- a/crates/nu-engine/src/column.rs
++++ b/crates/nu-engine/src/column.rs
+@@ -5,14 +5,14 @@ pub fn get_columns<'a>(input: impl IntoIterator<Item = &'a Value>) -> Vec<String
+     let mut columns = vec![];
+ 
+     for item in input {
+-        let Value::Record { cols, .. } = item else {
+-            return vec![];
+-        };
+-
+-        for col in cols {
+-            if !columns.contains(col) {
+-                columns.push(col.to_string());
++        if let Value::Record { cols, .. } = item {
++            for col in cols {
++                if !columns.contains(col) {
++                    columns.push(col.to_string());
++                }
+             }
++        } else {
++            return vec![];
+         }
+     }
+ 
+diff --git a/crates/nu-parser/src/parse_keywords.rs b/crates/nu-parser/src/parse_keywords.rs
+index cfb2597..8db2194 100644
+--- a/crates/nu-parser/src/parse_keywords.rs
++++ b/crates/nu-parser/src/parse_keywords.rs
+@@ -669,7 +669,9 @@ pub fn parse_alias(
+             return alias_pipeline;
+         }
+ 
+-        let Some(alias_name_expr) = alias_call.positional_nth(0) else {
++        let alias_name_expr = if let Some(expr) = alias_call.positional_nth(0) {
++            expr
++        } else {
+             working_set.error(ParseError::UnknownState(
+                 "Missing positional after call check".to_string(),
+                 span(spans),
+@@ -930,7 +932,9 @@ pub fn parse_export_in_module(
+         return (garbage_pipeline(spans), vec![]);
+     };
+ 
+-    let Some(export_decl_id) = working_set.find_decl(b"export", &Type::Any) else {
++    let export_decl_id = if let Some(id) = working_set.find_decl(b"export", &Type::Any) {
++        id
++    } else {
+         working_set.error(ParseError::InternalError(
+             "missing export command".into(),
+             export_span,
+@@ -2843,8 +2847,9 @@ pub fn parse_register(working_set: &mut StateWorkingSet, spans: &[Span]) -> Pipe
+             let val = eval_constant(working_set, expr)?;
+             let filename = value_as_string(val, expr.span)?;
+ 
+-            let Some(path) = find_in_dirs(&filename, working_set, &cwd, PLUGIN_DIRS_VAR) else {
+-                return Err(ParseError::RegisteredFileNotFound(filename, expr.span))
++            let path: PathBuf = match find_in_dirs(&filename, working_set, &cwd, PLUGIN_DIRS_VAR) {
++                Some(v) => v,
++                None => {return Err(ParseError::RegisteredFileNotFound(filename, expr.span));}
+             };
+ 
+             if path.exists() && path.is_file() {
+diff --git a/crates/nu-parser/src/parser.rs b/crates/nu-parser/src/parser.rs
+index 6980642..f98ee07 100644
+--- a/crates/nu-parser/src/parser.rs
++++ b/crates/nu-parser/src/parser.rs
+@@ -2880,7 +2880,9 @@ pub fn parse_type(_working_set: &StateWorkingSet, bytes: &[u8]) -> Type {
+ }
+ 
+ pub fn parse_import_pattern(working_set: &mut StateWorkingSet, spans: &[Span]) -> Expression {
+-    let Some(head_span) = spans.get(0) else {
++    let head_span = if let Some(head_span) = spans.get(0) {
++        head_span
++    } else {
+         working_set.error(ParseError::WrongImportPattern(span(spans)));
+         return garbage(span(spans));
+     };
+diff --git a/crates/nu-protocol/src/value/range.rs b/crates/nu-protocol/src/value/range.rs
+index b3f1099..36ea987 100644
+--- a/crates/nu-protocol/src/value/range.rs
++++ b/crates/nu-protocol/src/value/range.rs
+@@ -213,7 +213,9 @@ impl Iterator for RangeIterator {
+             self.curr.partial_cmp(&self.end)
+         };
+ 
+-        let Some(ordering) = ordering  else {
++        let ordering = if let Some(ord) = ordering {
++            ord
++        } else {
+             self.done = true;
+             return Some(Value::Error {
+                 error: Box::new(ShellError::CannotCreateRange { span: self.span }),

@@ -14,6 +14,8 @@ Name               | short description                | version | note
 `ruson`            | a cli json parser                | 0.2.2   |
 `streampager`      | a cli pager (similar to less)    | 0.10.2  |
 
+`nushell-unstable` also exists, but should really not be used. [more info](pkgs/nushell-unstable/README.md)
+
 ### No longer maintained
 
 Name               | short description                | version | note
