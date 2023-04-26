@@ -1,9 +1,13 @@
 #!/usr/bin/env nu
-let pkg = ($env | get -i PKG | default "nushell-preview")
+# env vars:
+#   PKG: version to update ("default", "preview", "custom", "unstable")
+#   REV: the commit hash to use
+let pkg = ($env | get -i PKG | default "preview")
 
-let preset_file = $"./pkgs/($pkg)/preset.nix"
-let build_file = $"./pkgs/($pkg)/default.nix"
-let build_file_backup = $"./pkgs/($pkg)/default.nix.old"
+let preset_file = $"./pkgs/nushell/($pkg)-preset.nix"
+let build_file = $"./pkgs/nushell/($pkg).nix"
+let build_file_backup = $"./pkgs/nushell/($pkg).nix.old"
+let package_name = (if $pkg == "default" {"nushell"} else {$"nushell-($pkg)"})
 
 def generate_file [
 	src_rev: string
@@ -18,14 +22,14 @@ def generate_file [
 }
 
 def get_expected_hash [] {
-	do { nix-build -A $pkg } | complete | get stderr
+	do { nix-build -A $package_name } | complete | get stderr
 	| parse -r 'got: *(?P<sha>sha256-[a-zA-Z0-9+/]+=)' | get 0.sha
 }
 
 mv -f $build_file $build_file_backup
 
 try {
-	let commit = (http get "https://api.github.com/repos/nushell/nushell/commits/main").sha
+	let commit = ($env | get -i REV | default (http get "https://api.github.com/repos/nushell/nushell/commits/main").sha)
 	let commit = $'"($commit)"'
 	print $"commit: ($commit)"
 
@@ -39,7 +43,7 @@ try {
 
 	generate_file $commit $src_sha256 $cargo_sha256
 
-	let build_attempt = (do { nix-build -A $pkg } | complete)
+	let build_attempt = (do { nix-build -A $package_name } | complete)
 	if $build_attempt.exit_code != 0 {
 		print -e "build failed"
 		print -e ($build_attempt.stderr)

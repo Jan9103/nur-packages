@@ -1,6 +1,6 @@
-{ lib
+{ pkgs
+, lib
 , fetchFromGitHub
-, rustPlatform
 , openssl
 , zstd
 , pkg-config
@@ -11,14 +11,19 @@
 , nix-update-script
 }:
 
-rustPlatform.buildRustPackage {
-  pname = "nushell-preview";
-  version = "preview";
+let
+  toolchain = pkgs.fenix.minimal.toolchain;
+in (pkgs.makeRustPlatform {
+  cargo = toolchain;
+  rustc = toolchain;
+}).buildRustPackage rec {
+  pname = "nushell";
+  version = {src_rev};
 
   src = fetchFromGitHub {
     owner = "nushell";
     repo = "nushell";
-    rev = {src_rev};
+    rev = version;
     sha256 = {src_sha256};
   };
 

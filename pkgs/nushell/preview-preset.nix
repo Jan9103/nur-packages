@@ -1,6 +1,6 @@
-{ lib
+{ pkgs
+, lib
 , fetchFromGitHub
-, rustPlatform
 , openssl
 , zstd
 , pkg-config
@@ -11,22 +11,23 @@
 , nix-update-script
 }:
 
-rustPlatform.buildRustPackage {
-  pname = "nushell-unstable";
-  version = "unstable";
+let
+  toolchain = pkgs.fenix.minimal.toolchain;
+in (pkgs.makeRustPlatform {
+  cargo = toolchain;
+  rustc = toolchain;
+}).buildRustPackage {
+  pname = "nushell-preview";
+  version = "preview";
 
   src = fetchFromGitHub {
     owner = "nushell";
     repo = "nushell";
-    rev = "06996d8c7f0205d1aedb36387a049a066599f46e";
-    sha256 = "sha256-exAeXGl/tUgsfEuCKtgL1hGovktRY3eFpthM5A1CQug=";
+    rev = {src_rev};
+    sha256 = {src_sha256};
   };
 
-  cargoSha256 = "sha256-1j2TRs834N5fIND1t7t/WNcTCeErlsqco9RDuUdSF0Y=";
-
-  cargoPatches = [
-    ./remove-let-else.patch
-  ];
+  cargoSha256 = {cargo_sha256};
 
   nativeBuildInputs = [ pkg-config python3 ];
 
@@ -34,7 +35,7 @@ rustPlatform.buildRustPackage {
 
   buildFeatures = [ "default" ];
 
-  doCheck = false;  # the tests require a newer rustc version than available
+  doCheck = true;
 
   checkPhase = ''
     runHook preCheck
